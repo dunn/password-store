@@ -104,15 +104,24 @@ elsif File.extname(filename) =~ /.1pif/i
   # Import 1PIF
   JSON.parse("[#{pif}]", symbolize_names: true).each do |entry|
     next unless entry[:typeName] == "webforms.WebForm"
+    next if entry[:secureContents][:fields].nil?
+
     pass = {}
+
     pass[:name] = "#{(options.group + "/") if options.group}#{entry[options.name]}"
+
     pass[:title] = entry[:title]
+
     pass[:password] = entry[:secureContents][:fields].detect do |field|
-      field[:name] == "password"
+      field[:designation] == "password"
     end[:value]
-    pass[:login] = entry[:secureContents][:fields].detect do |field|
-      field[:name] == "username"
-    end[:value]
+
+    username = entry[:secureContents][:fields].detect do |field|
+      field[:designation] == "username"
+    end
+    # might be nil
+    pass[:login] = username[:value] if username
+
     pass[:url] = entry[:location]
     pass[:notes] = entry[:secureContents][:notesPlain]
     passwords << pass
